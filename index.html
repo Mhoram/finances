@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Just Another Mortgage Calculator</title>
+    <title>Personal Finance Manager</title>
 
     <!-- External Dependencies -->
     <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1"></script>
@@ -11,6 +11,9 @@
 
     <!-- Application Config -->
     <script src="config.js"></script>
+    <!-- CGT API config — copy js/cgt-config.example.js to js/cgt-config.js and
+         point CGT_API_BASE at wherever you deploy server/ -->
+    <script src="js/cgt-config.js"></script>
 
     <!-- Styles -->
     <link rel="stylesheet" href="css/styles.css">
@@ -39,7 +42,7 @@
                     <circle cx="84" cy="40" r="6" fill="none" stroke="#e67e22" stroke-width="2.5"/>
                     <line x1="84" y1="24" x2="72" y2="44" stroke="#e67e22" stroke-width="2.5"/>
                 </svg>
-                Just Another Mortgage Calculator
+                Personal Finance Manager
             </h1>
             <p>Visualise your mortgage and see the impact of overpayments | <a href="guide.html" style="color: #3498db;">Usage Guide</a> | <a href="changelog.html" style="color: #3498db;">Changelog</a> |
                 <select id="currencySelect" class="currency-selector" title="Select currency">
@@ -53,6 +56,16 @@
         <div class="tab-nav">
             <button class="tab-btn active" onclick="switchTab('mortgage')" id="mortgageTabBtn">&#127968; Mortgage</button>
             <button class="tab-btn" onclick="switchTab('loan')" id="loanTabBtn">&#128179; Loan</button>
+            <button class="tab-btn" onclick="toggleStocksMenu(event)" id="stocksTabBtn">&#128200; Stocks &#9662;</button>
+            <button class="tab-btn" onclick="switchTab('netWorth')" id="netWorthTabBtn">&#128176; Net Worth</button>
+        </div>
+
+        <div class="tab-subnav" id="stocksMenu">
+            <button class="tab-btn" onclick="switchTab('transactions')" id="transactionsTabBtn">&#128260; Transactions</button>
+            <button class="tab-btn" onclick="switchTab('import')" id="importTabBtn">&#128229; Import</button>
+            <button class="tab-btn" onclick="switchTab('report')" id="reportTabBtn">&#129534; Tax Report</button>
+            <button class="tab-btn" onclick="switchTab('holdings')" id="holdingsTabBtn">&#128202; Holdings</button>
+            <button class="tab-btn" onclick="switchTab('deemedDisposal')" id="deemedDisposalTabBtn">&#9203; Deemed Disposal</button>
         </div>
 
         <div id="mortgageTab" class="tab-content active">
@@ -549,6 +562,24 @@
                 </div>
             </div>
         </div><!-- end #loanTab -->
+
+        <!-- Transactions Tab -->
+        <div id="transactionsTab" class="tab-content cgt-tab"></div>
+
+        <!-- Import Tab -->
+        <div id="importTab" class="tab-content cgt-tab"></div>
+
+        <!-- Tax Report Tab -->
+        <div id="reportTab" class="tab-content cgt-tab"></div>
+
+        <!-- Holdings Tab -->
+        <div id="holdingsTab" class="tab-content cgt-tab"></div>
+
+        <!-- Deemed Disposal Tab -->
+        <div id="deemedDisposalTab" class="tab-content cgt-tab"></div>
+
+        <!-- Net Worth Tab -->
+        <div id="netWorthTab" class="tab-content cgt-tab"></div>
     </div>
 
     <!-- Application Scripts -->
@@ -558,13 +589,43 @@
     <script src="js/app.js"></script>
     <script src="js/loan-charts.js"></script>
     <script src="js/loan-app.js"></script>
+
+    <!-- CGT / Holdings / Net Worth (ported from the CGT-tracker project; talks
+         to the API in server/ — see js/cgt-config.js) -->
+    <script src="js/cgt-ui.js"></script>
+    <script src="js/cgt-transactions.js"></script>
+    <script src="js/cgt-import.js"></script>
+    <script src="js/cgt-report.js"></script>
+    <script src="js/cgt-holdings.js"></script>
+    <script src="js/cgt-deemed-disposal.js"></script>
+    <script src="js/cgt-net-worth.js"></script>
+
     <script>
+        const CGT_TAB_RENDERERS = {
+            transactions: renderCgtTransactions,
+            import: renderCgtImport,
+            report: renderCgtReport,
+            holdings: renderCgtHoldings,
+            deemedDisposal: renderCgtDeemedDisposal,
+            netWorth: renderCgtNetWorth,
+        };
+        const ALL_TAB_NAMES = ['mortgage', 'loan', ...Object.keys(CGT_TAB_RENDERERS)];
+        const STOCKS_SUBMENU_TABS = ['transactions', 'import', 'report', 'holdings', 'deemedDisposal'];
+
         function switchTab(name) {
-            document.getElementById('mortgageTab').classList.toggle('active', name === 'mortgage');
-            document.getElementById('loanTab').classList.toggle('active', name === 'loan');
-            document.getElementById('mortgageTabBtn').classList.toggle('active', name === 'mortgage');
-            document.getElementById('loanTabBtn').classList.toggle('active', name === 'loan');
-            if (name === 'loan' && !LoanApp.initialized) LoanApp.init();
+            ALL_TAB_NAMES.forEach(n => {
+                document.getElementById(n + 'Tab').classList.toggle('active', n === name);
+                document.getElementById(n + 'TabBtn').classList.toggle('active', n === name);
+            });
+            document.getElementById('stocksTabBtn').classList.toggle('active', STOCKS_SUBMENU_TABS.includes(name));
+            if (!STOCKS_SUBMENU_TABS.includes(name)) document.getElementById('stocksMenu').classList.remove('open');
+            if (name === 'loan' && !LoanApp.state.initialized) LoanApp.init();
+            if (CGT_TAB_RENDERERS[name]) CGT_TAB_RENDERERS[name](document.getElementById(name + 'Tab'));
+        }
+
+        function toggleStocksMenu(event) {
+            event.stopPropagation();
+            document.getElementById('stocksMenu').classList.toggle('open');
         }
     </script>
 </body>
