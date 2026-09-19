@@ -25,6 +25,12 @@ app.use(cors(corsOrigin ? { origin: corsOrigin.split(',').map(s => s.trim()) } :
 
 app.use(express.json());
 
+// Debug logging for all requests
+app.use((req, res, next) => {
+    console.log(`${new Date().toISOString()} ${req.method} ${req.url} ${req.headers['user-agent'] || 'no-ua'} ${JSON.stringify(req.headers['host'])}`);
+    next();
+});
+
 app.get('/api/v1/health', (req, res) => res.json({ ok: true }));
 
 // Root route for URL validation (e.g. Enable Banking redirect URL check)
@@ -40,6 +46,7 @@ app.use('/api/v1/holdings', require('./routes/holdings'));
 app.use('/api/v1/prices', require('./routes/prices'));
 app.use('/api/v1/deemed-disposal', require('./routes/deemed-disposal'));
 app.use('/api/v1/net-worth', require('./routes/net-worth'));
+app.use('/api/v1/bank-sync', require('./routes/bank-sync'));
 
 app.use((req, res) => {
     res.status(404).json({ error: 'Not found' });
