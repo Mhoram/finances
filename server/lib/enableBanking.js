@@ -28,6 +28,7 @@ function createJwt(appId) {
 
     const payload = {
         iss: appId,
+        aud: 'api.enablebanking.com',
         iat: now,
         exp: now + 30, // 30 second expiry
         jti: crypto.randomUUID()
