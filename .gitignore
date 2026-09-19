@@ -30,3 +30,11 @@ tmpclaude-*
 
 # Local config (copy config.example.js to config.js)
 config.js
+
+# CGT API config (copy js/cgt-config.example.js to js/cgt-config.js)
+js/cgt-config.js
+
+# Server: dependencies, DB, secrets
+server/node_modules/
+server/data/
+server/.env
