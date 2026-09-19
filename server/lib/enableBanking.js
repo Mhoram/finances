@@ -79,13 +79,19 @@ async function startAuth(aspspId, psuType = 'personal', state = null) {
         throw new Error('ENABLE_BANKING_REDIRECT_URL not set');
     }
 
+    const validUntil = new Date();
+    validUntil.setDate(validUntil.getDate() + 90); // 90 days default
+
     const body = {
         access: {
-            accounts: {},
-            balances: {},
-            transactions: {}
+            accounts: [],
+            balances: true,
+            transactions: true,
+            valid_until: validUntil.toISOString().split('T')[0]
         },
-        aspsp_id: aspspId,
+        aspsp: {
+            id: aspspId
+        },
         psu_type: psuType,
         redirect_url: redirectUrl,
         state: state || crypto.randomUUID()
