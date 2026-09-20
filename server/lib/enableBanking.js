@@ -65,6 +65,7 @@ function apiRequest(endpoint, options = {}) {
             headers: {
                 'Authorization': `Bearer ${jwt}`,
                 'Content-Type': 'application/json',
+                'Accept': 'application/json',
                 'Content-Length': Buffer.byteLength(bodyString),
                 ...options.headers
             }
