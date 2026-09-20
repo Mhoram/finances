@@ -59,7 +59,7 @@ async function apiRequest(endpoint, options = {}) {
         ...options,
         headers: {
             'Authorization': `Bearer ${jwt}`,
-            'Content-Type': 'application/json',
+            'Content-Type': 'application/json; charset=utf-8',
             ...options.headers
         }
     };
