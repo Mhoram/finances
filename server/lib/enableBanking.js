@@ -84,13 +84,14 @@ async function startAuth(aspspId, psuType = 'personal', state = null) {
 
     const body = {
         access: {
-            accounts: [],
+            accounts: ['*'],
             balances: true,
             transactions: true,
-            valid_until: validUntil.toISOString().split('T')[0]
+            valid_until: validUntil.toISOString()
         },
         aspsp: {
-            id: aspspId
+            name: aspspId,
+            country: 'IE'
         },
         psu_type: psuType,
         redirect_url: redirectUrl,
