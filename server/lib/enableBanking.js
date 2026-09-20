@@ -55,14 +55,16 @@ async function apiRequest(endpoint, options = {}) {
     const jwt = createJwt(appId);
     const url = `${ENABLE_BANKING_BASE}${endpoint}`;
 
-    const response = await fetch(url, {
+    const fetchOptions = {
         ...options,
         headers: {
             'Authorization': `Bearer ${jwt}`,
             'Content-Type': 'application/json',
             ...options.headers
         }
-    });
+    };
+    console.log('Enable Banking API request:', url, JSON.stringify(fetchOptions, null, 2));
+    const response = await fetch(url, fetchOptions);
 
     if (!response.ok) {
         const errorText = await response.text();
