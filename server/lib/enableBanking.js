@@ -3,8 +3,9 @@
 const fs = require('fs');
 const path = require('path');
 const crypto = require('crypto');
+const https = require('https');
 
-const ENABLE_BANKING_BASE = 'https://api.enablebanking.com';
+const ENABLE_BANKING_HOST = 'api.enablebanking.com';
 
 // Load private key from file
 function loadPrivateKey() {
@@ -45,33 +46,60 @@ function createJwt(appId) {
     return `${signingInput}.${signature}`;
 }
 
-// Generic API request wrapper
-async function apiRequest(endpoint, options = {}) {
-    const appId = process.env.ENABLE_BANKING_APP_ID;
-    if (!appId) {
-        throw new Error('ENABLE_BANKING_APP_ID not set');
-    }
-
-    const jwt = createJwt(appId);
-    const url = `${ENABLE_BANKING_BASE}${endpoint}`;
-
-    const fetchOptions = {
-        ...options,
-        headers: {
-            'Authorization': `Bearer ${jwt}`,
-            'Content-Type': 'application/json; charset=utf-8',
-            ...options.headers
+// Generic API request wrapper using https module
+function apiRequest(endpoint, options = {}) {
+    return new Promise((resolve, reject) => {
+        const appId = process.env.ENABLE_BANKING_APP_ID;
+        if (!appId) {
+            return reject(new Error('ENABLE_BANKING_APP_ID not set'));
         }
-    };
-    console.log('Enable Banking API request:', url, JSON.stringify(fetchOptions, null, 2));
-    const response = await fetch(url, fetchOptions);
 
-    if (!response.ok) {
-        const errorText = await response.text();
-        throw new Error(`Enable Banking API error ${response.status}: ${errorText}`);
-    }
+        const jwt = createJwt(appId);
+        const bodyString = options.body || '';
 
-    return response.json();
+        const requestOptions = {
+            hostname: ENABLE_BANKING_HOST,
+            port: 443,
+            path: endpoint,
+            method: options.method || 'GET',
+            headers: {
+                'Authorization': `Bearer ${jwt}`,
+                'Content-Type': 'application/json',
+                'Content-Length': Buffer.byteLength(bodyString),
+                ...options.headers
+            }
+        };
+
+        console.log('Enable Banking API request:', JSON.stringify({
+            url: `https://${ENABLE_BANKING_HOST}${endpoint}`,
+            method: requestOptions.method,
+            headers: requestOptions.headers,
+            body: bodyString
+        }, null, 2));
+
+        const req = https.request(requestOptions, (res) => {
+            let data = '';
+            res.on('data', (chunk) => data += chunk);
+            res.on('end', () => {
+                if (res.statusCode >= 200 && res.statusCode < 300) {
+                    try {
+                        resolve(JSON.parse(data));
+                    } catch (e) {
+                        resolve(data);
+                    }
+                } else {
+                    reject(new Error(`Enable Banking API error ${res.statusCode}: ${data}`));
+                }
+            });
+        });
+
+        req.on('error', (err) => reject(err));
+
+        if (bodyString) {
+            req.write(bodyString);
+        }
+        req.end();
+    });
 }
 
 // Start authorization for a bank (redirect flow)
