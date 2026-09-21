@@ -165,6 +165,21 @@
         <div class="changelog-list">
             <div class="changelog-entry">
                 <div class="changelog-header">
+                    <span class="changelog-title">🔧 Fix Enable Banking Auth Request</span>
+                    <span class="changelog-date">20 September 2026</span>
+                </div>
+                <div class="changelog-description">
+                    <ul>
+                        <li>Removed invalid <code>access.accounts: ['*']</code> wildcard — root cause of the misleading 422 error on <code>/auth</code></li>
+                        <li>Fixed JWT <code>iss</code> claim to always be <code>enablebanking.com</code> per the official API spec</li>
+                        <li>Added <code>getAspsps()</code> so bank names are fetched from the API instead of hardcoded</li>
+                        <li>Sandbox auth flow now confirmed working end-to-end</li>
+                    </ul>
+                </div>
+                <a href="https://github.com/Mhoram/mortgage-calc/pull/22" class="pr-link">PR #22</a>
+            </div>
+            <div class="changelog-entry">
+                <div class="changelog-header">
                     <span class="changelog-title">✨ Add Loan Calculator Tab</span>
                     <span class="changelog-date">13 March 2026</span>
                 </div>
