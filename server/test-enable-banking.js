@@ -21,7 +21,7 @@ const now = Math.floor(Date.now() / 1000);
 
 const header = { alg: 'RS256', typ: 'JWT', kid: appId };
 const payload = {
-    iss: appId,
+    iss: 'enablebanking.com',
     aud: 'api.enablebanking.com',
     iat: now,
     exp: now + 30,
@@ -42,9 +42,10 @@ const jwt = `${signingInput}.${signature}`;
 const validUntil = new Date();
 validUntil.setDate(validUntil.getDate() + 90);
 
+// access.accounts omitted: must be AccountIdentification objects ({iban: ...}),
+// not strings — sending "'*'" fails validation with a misleading 422 error.
 const body = {
     access: {
-        accounts: ['*'],
         balances: true,
         transactions: true,
         valid_until: validUntil.toISOString()

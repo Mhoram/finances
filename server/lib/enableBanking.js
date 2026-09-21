@@ -27,11 +27,13 @@ function createJwt(appId) {
         kid: appId
     };
 
+    // Per Enable Banking API spec: iss is ALWAYS 'enablebanking.com'
+    // (the application id only appears in the kid header claim).
     const payload = {
-        iss: appId,
+        iss: 'enablebanking.com',
         aud: 'api.enablebanking.com',
         iat: now,
-        exp: now + 30, // 30 second expiry
+        exp: now + 30, // 30 second expiry (max allowed TTL: 24h)
         jti: crypto.randomUUID()
     };
 
@@ -103,6 +105,13 @@ function apiRequest(endpoint, options = {}) {
     });
 }
 
+// List available ASPSPs (banks). Always fetch names from here rather than
+// hardcoding — exact names matter (e.g. 'Mock ASPSP' in sandbox; N26 only
+// exists once the application is production).
+async function getAspsps(country = 'IE') {
+    return apiRequest(`/aspsps?country=${encodeURIComponent(country)}`);
+}
+
 // Start authorization for a bank (redirect flow)
 async function startAuth(aspspId, psuType = 'personal', state = null) {
     const redirectUrl = process.env.ENABLE_BANKING_REDIRECT_URL;
@@ -113,9 +122,13 @@ async function startAuth(aspspId, psuType = 'personal', state = null) {
     const validUntil = new Date();
     validUntil.setDate(validUntil.getDate() + 90); // 90 days default
 
+    // NOTE: do NOT send access.accounts — the API expects an array of
+    // AccountIdentification objects ({iban: '...'}), and anything else
+    // (e.g. the wildcard string '*') fails schema validation with a
+    // MISLEADING 422 "set Content-Type" error. Omitting it lets the
+    // bank/PSU choose the accounts during the consent flow.
     const body = {
         access: {
-            accounts: ['*'],
             balances: true,
             transactions: true,
             valid_until: validUntil.toISOString()
@@ -164,6 +177,7 @@ async function getBalances(accountId, sessionId) {
 
 module.exports = {
     createJwt,
+    getAspsps,
     startAuth,
     createSession,
     getAccounts,
