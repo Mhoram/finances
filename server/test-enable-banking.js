@@ -39,6 +39,10 @@ const signature = crypto.createSign('RSA-SHA256')
 const jwt = `${signingInput}.${signature}`;
 
 // Build request body
+// ASPSP name matters: sandbox only exposes 'Mock ASPSP'; real banks (N26 etc.)
+// exist only on production applications. Override with ENABLE_BANKING_TEST_ASPSP.
+const aspspName = process.env.ENABLE_BANKING_TEST_ASPSP || 'Mock ASPSP';
+
 const validUntil = new Date();
 validUntil.setDate(validUntil.getDate() + 90);
 
@@ -51,7 +55,7 @@ const body = {
         valid_until: validUntil.toISOString()
     },
     aspsp: {
-        name: 'n26',
+        name: aspspName,
         country: 'IE'
     },
     psu_type: 'personal',
