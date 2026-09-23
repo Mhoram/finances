@@ -55,12 +55,45 @@ function describeTx(t) {
 }
 
 /**
- * Extract the provider account id from an AccountResource. The id lives in
- * account_id.uid in practice; fall back through iban/other for safety.
+ * Extract the provider account id from an AccountResource. The id used for
+ * transaction endpoints is the TOP-LEVEL `uid` field (a UUID — "unique account
+ * identificator used for fetching account balances and transactions").
+ * account_id is just an AccountIdentification (iban/other) — do NOT use it for
+ * API calls. Fall back through the identification fields only for display.
  */
 function providerAccountId(account) {
-    const aid = account.account_id || {};
-    return aid.uid || aid.iban || aid.other?.identification || null;
+    return account.uid
+        || account.account_id?.uid
+        || account.account_id?.other?.identification
+        || null;
+}
+
+/**
+ * Some sessions return accounts without `uid` populated. The GET /sessions/{id}
+ * response has the same accounts as SessionAccounts (`accounts_data`, with uid)
+ * plus a flat `accounts` list of UUIDs — match via identification_hash.
+ */
+async function fillMissingUids(session) {
+    const accounts = session.accounts || [];
+    if (!accounts.length || accounts.every(a => a.uid)) return session;
+
+    const sessionData = await enableBanking.getSession(session.session_id);
+    const byHash = new Map(
+        (sessionData.accounts_data || [])
+            .filter(sa => sa.uid && sa.identification_hash)
+            .map(sa => [sa.identification_hash, sa.uid]),
+    );
+    const uuids = sessionData.accounts || [];
+    for (const acc of accounts) {
+        if (acc.uid) continue;
+        if (acc.identification_hash && byHash.has(acc.identification_hash)) {
+            acc.uid = byHash.get(acc.identification_hash);
+        } else if (accounts.length === uuids.length) {
+            // last resort: positional match against the flat uuid list
+            acc.uid = uuids[accounts.indexOf(acc)];
+        }
+    }
+    return session;
 }
 
 /** Upsert a session and its accounts after the callback. Returns connection row. */
@@ -189,6 +222,7 @@ router.get('/callback', async (req, res) => {
 
         // Exchange authorization code for a session (also returns accounts)
         const session = await enableBanking.createSession(code, state);
+        await fillMissingUids(session);
         const stored = storeSession(session);
 
         res.json({

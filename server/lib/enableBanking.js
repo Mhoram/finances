@@ -156,6 +156,11 @@ async function createSession(code, state) {
     });
 }
 
+// Get session details (status, account uuid list, accounts_data)
+async function getSession(sessionId) {
+    return apiRequest(`/sessions/${encodeURIComponent(sessionId)}`);
+}
+
 // Get accounts for a session
 async function getAccounts(sessionId) {
     return apiRequest(`/accounts?session_id=${encodeURIComponent(sessionId)}`);
@@ -181,6 +186,7 @@ module.exports = {
     getAspsps,
     startAuth,
     createSession,
+    getSession,
     getAccounts,
     getTransactions,
     getBalances

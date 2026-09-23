@@ -36,9 +36,6 @@ app.get('/api/v1/health', (req, res) => res.json({ ok: true }));
 // Root route for URL validation (e.g. Enable Banking redirect URL check)
 app.get('/', (req, res) => res.json({ ok: true }));
 
-// Placeholder for bank-sync callback — will be implemented in bank-sync.js
-app.get('/api/v1/bank-sync/callback', (req, res) => res.json({ ok: true, note: 'Not yet implemented' }));
-
 app.use('/api/v1/transactions', require('./routes/transactions'));
 app.use('/api/v1/import', require('./routes/import'));
 app.use('/api/v1/report', require('./routes/reports'));
