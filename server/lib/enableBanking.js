@@ -162,10 +162,11 @@ async function getAccounts(sessionId) {
 }
 
 // Get transactions for an account
-async function getTransactions(accountId, sessionId, dateFrom, dateTo) {
+async function getTransactions(accountId, sessionId, dateFrom, dateTo, continuationKey) {
     const params = new URLSearchParams({ session_id: sessionId });
     if (dateFrom) params.append('date_from', dateFrom);
     if (dateTo) params.append('date_to', dateTo);
+    if (continuationKey) params.append('continuation_key', continuationKey);
 
     return apiRequest(`/accounts/${accountId}/transactions?${params}`);
 }

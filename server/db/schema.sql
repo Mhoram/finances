@@ -134,3 +134,55 @@ CREATE TABLE IF NOT EXISTS loan_rate_periods (
 
 CREATE INDEX IF NOT EXISTS idx_loan_lump_sums_loan    ON loan_lump_sums(loan_id);
 CREATE INDEX IF NOT EXISTS idx_loan_rate_periods_loan ON loan_rate_periods(loan_id);
+
+-- Cash flow: bank connections via Enable Banking. One row per authorized
+-- session (a "connection" = consent granted at an ASPSP). session_id is the
+-- handle used for all subsequent data pulls; valid_until comes from the
+-- session's access scope (180d N26/Revolut, 90d Trade Republic, etc.).
+CREATE TABLE IF NOT EXISTS bank_connections (
+  id               INTEGER PRIMARY KEY AUTOINCREMENT,
+  aspsp_name       TEXT    NOT NULL,      -- e.g. 'N26' (exact Enable Banking name)
+  aspsp_country    TEXT    NOT NULL,      -- ISO 3166 two-letter, e.g. 'IE'
+  psu_type         TEXT    NOT NULL DEFAULT 'personal' CHECK(psu_type IN ('personal','business','corporate')),
+  session_id       TEXT    NOT NULL UNIQUE,
+  authorization_id TEXT,
+  status           TEXT    NOT NULL DEFAULT 'ACTIVE' CHECK(status IN ('ACTIVE','EXPIRED','REVOKED','CLOSED')),
+  valid_until      TEXT,                  -- ISO datetime, consent expiry
+  state            TEXT,                  -- OAuth state echoed back in callback
+  created_at       TEXT    NOT NULL DEFAULT (datetime('now'))
+);
+
+-- Accounts discovered when a session is authorized (POST /sessions response).
+-- provider_account_id is Enable Banking's uid used in transaction endpoints;
+-- iban/currency/display_name come from the AccountResource.
+CREATE TABLE IF NOT EXISTS bank_accounts (
+  id                   INTEGER PRIMARY KEY AUTOINCREMENT,
+  connection_id        INTEGER NOT NULL REFERENCES bank_connections(id) ON DELETE CASCADE,
+  provider_account_id  TEXT    NOT NULL,
+  iban                 TEXT,
+  currency             TEXT,
+  display_name         TEXT    NOT NULL DEFAULT '',
+  created_at           TEXT    NOT NULL DEFAULT (datetime('now')),
+  UNIQUE(connection_id, provider_account_id)
+);
+
+-- Cash transactions: bank-synced (Enable Banking) or CSV-imported (e.g. Avant,
+-- which has no PSD2 AISP we can use). amount_eur is signed: positive = money
+-- in, negative = money out. import_id is a sha256 dedup key (same pattern as
+-- the degiro import); NULL only for manual entries.
+CREATE TABLE IF NOT EXISTS cash_transactions (
+  id           INTEGER PRIMARY KEY AUTOINCREMENT,
+  account_id   INTEGER REFERENCES bank_accounts(id),  -- NULL for CSV-only rows
+  date         TEXT    NOT NULL,                       -- YYYY-MM-DD (booking date)
+  amount_eur   TEXT    NOT NULL,                       -- signed string decimal
+  currency     TEXT    NOT NULL DEFAULT 'EUR',
+  counterparty TEXT    NOT NULL DEFAULT '',
+  description  TEXT    NOT NULL DEFAULT '',
+  source       TEXT    NOT NULL CHECK(source IN ('enable_banking','avant_csv','manual')),
+  import_id    TEXT    UNIQUE,
+  notes        TEXT,
+  created_at   TEXT    NOT NULL DEFAULT (datetime('now'))
+);
+
+CREATE INDEX IF NOT EXISTS idx_cash_transactions_account ON cash_transactions(account_id);
+CREATE INDEX IF NOT EXISTS idx_cash_transactions_date    ON cash_transactions(date);
