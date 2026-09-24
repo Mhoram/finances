@@ -6,8 +6,11 @@
 'use strict';
 
 const CashflowApp = {
-    state: { initialized: false, accounts: [], offset: 0, limit: 100, total: 0 },
-    LIMIT: 100,
+    initialized: false,
+    accounts: [],
+    offset: 0,
+    limit: 100,
+    total: 0,
 };
 
 async function renderCashflow(app) {
