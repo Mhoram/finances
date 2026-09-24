@@ -43,6 +43,7 @@ app.use('/api/v1/holdings', require('./routes/holdings'));
 app.use('/api/v1/prices', require('./routes/prices'));
 app.use('/api/v1/deemed-disposal', require('./routes/deemed-disposal'));
 app.use('/api/v1/net-worth', require('./routes/net-worth'));
+app.use('/api/v1/cashflow', require('./routes/cashflow'));
 app.use('/api/v1/bank-sync', require('./routes/bank-sync'));
 
 app.use((req, res) => {
