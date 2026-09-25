@@ -58,6 +58,7 @@
             <button class="tab-btn" onclick="switchTab('loan')" id="loanTabBtn">&#128179; Loan</button>
             <button class="tab-btn" onclick="toggleStocksMenu(event)" id="stocksTabBtn">&#128200; Stocks &#9662;</button>
             <button class="tab-btn" onclick="switchTab('netWorth')" id="netWorthTabBtn">&#128176; Net Worth</button>
+            <button class="tab-btn" onclick="switchTab('cashflow')" id="cashflowTabBtn">&#128181; Cash Flow</button>
         </div>
 
         <div class="tab-subnav" id="stocksMenu">
@@ -580,6 +581,9 @@
 
         <!-- Net Worth Tab -->
         <div id="netWorthTab" class="tab-content cgt-tab"></div>
+
+        <!-- Cash Flow Tab -->
+        <div id="cashflowTab" class="tab-content cgt-tab"></div>
     </div>
 
     <!-- Application Scripts -->
@@ -599,6 +603,7 @@
     <script src="js/cgt-holdings.js"></script>
     <script src="js/cgt-deemed-disposal.js"></script>
     <script src="js/cgt-net-worth.js"></script>
+    <script src="js/cashflow.js"></script>
 
     <script>
         const CGT_TAB_RENDERERS = {
@@ -608,6 +613,7 @@
             holdings: renderCgtHoldings,
             deemedDisposal: renderCgtDeemedDisposal,
             netWorth: renderCgtNetWorth,
+            cashflow: renderCashflow,
         };
         const ALL_TAB_NAMES = ['mortgage', 'loan', ...Object.keys(CGT_TAB_RENDERERS)];
         const STOCKS_SUBMENU_TABS = ['transactions', 'import', 'report', 'holdings', 'deemedDisposal'];
